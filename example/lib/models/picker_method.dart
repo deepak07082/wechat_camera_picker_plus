@@ -35,7 +35,8 @@ List<PickMethod> get pickMethods {
     PickMethod(
       icon: '📽',
       name: 'Taking videos by tap',
-      description: 'Use cameras only to take videos, but not with long-press, '
+      description:
+          'Use cameras only to take videos, but not with long-press, '
           'just a single tap.',
       method: (BuildContext context) => CameraPicker.pickFromCamera(
         context,
@@ -43,6 +44,7 @@ List<PickMethod> get pickMethods {
           enableRecording: true,
           onlyEnableRecording: true,
           enableTapRecording: true,
+          maximumRecordingDuration: Duration(seconds: 10),
         ),
       ),
     ),
@@ -112,7 +114,8 @@ List<PickMethod> get pickMethods {
     PickMethod(
       icon: '🔍',
       name: 'Prevent scaling for camera preview',
-      description: 'Camera preview will not be scaled to cover '
+      description:
+          'Camera preview will not be scaled to cover '
           'the whole screen of the device, only fit with the raw size.',
       method: (BuildContext context) => CameraPicker.pickFromCamera(
         context,
@@ -122,7 +125,8 @@ List<PickMethod> get pickMethods {
     PickMethod(
       icon: '🌀',
       name: 'Lower resolutions',
-      description: 'Use a lower resolution preset might be helpful '
+      description:
+          'Use a lower resolution preset might be helpful '
           'in some specific scenarios.',
       method: (BuildContext context) => CameraPicker.pickFromCamera(
         context,
@@ -134,7 +138,8 @@ List<PickMethod> get pickMethods {
     PickMethod(
       icon: '🤳',
       name: 'Prefer front camera',
-      description: 'Use the front camera as the preferred lens direction, '
+      description:
+          'Use the front camera as the preferred lens direction, '
           'if the device has a front camera.',
       method: (BuildContext context) => CameraPicker.pickFromCamera(
         context,
@@ -150,19 +155,17 @@ List<PickMethod> get pickMethods {
       method: (BuildContext context) => CameraPicker.pickFromCamera(
         context,
         pickerConfig: CameraPickerConfig(
-          foregroundBuilder: (
-            BuildContext context,
-            CameraController? controller,
-          ) {
-            return Center(
-              child: Text(
-                controller == null
-                    ? 'Waiting for initialize...'
-                    : '${controller.description.lensDirection}',
-                style: const TextStyle(color: Colors.white),
-              ),
-            );
-          },
+          foregroundBuilder:
+              (BuildContext context, CameraController? controller) {
+                return Center(
+                  child: Text(
+                    controller == null
+                        ? 'Waiting for initialize...'
+                        : '${controller.description.lensDirection}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                );
+              },
         ),
       ),
     ),

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:wechat_picker_library/wechat_picker_library.dart';
 
-import 'builder/tween_animation_builder_2.dart';
-
-class CameraFocusPoint extends StatelessWidget {
-  const CameraFocusPoint({Key? key, required this.size, required this.color})
-    : super(key: key);
+final class CameraFocusPoint extends StatelessWidget {
+  const CameraFocusPoint({super.key, required this.size, required this.color});
 
   final double size;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +32,7 @@ class CameraFocusPoint extends StatelessWidget {
 
 /// A [CustomPaint] that draws the exposure point with four arcs and one circle.
 /// 包含了四条弧及一个圆的曝光点绘制。
-class CameraFocusPointPainter extends CustomPainter {
+final class CameraFocusPointPainter extends CustomPainter {
   const CameraFocusPointPainter({
     required this.size,
     required this.color,
@@ -45,7 +43,7 @@ class CameraFocusPointPainter extends CustomPainter {
   final double size;
   final double radius;
   final double strokeWidth;
-  final Color color;
+  final Color? color;
 
   Radius get _circularRadius => Radius.circular(radius);
 
@@ -55,8 +53,10 @@ class CameraFocusPointPainter extends CustomPainter {
     final double lineLength = dividedSize.width - radius;
     final Paint paint = Paint()
       ..style = PaintingStyle.stroke
-      ..color = color
       ..strokeWidth = strokeWidth;
+    if (color != null) {
+      paint.color = color!;
+    }
 
     final Path path = Path()
       // Move to the start of the arc-line group at the left-top.

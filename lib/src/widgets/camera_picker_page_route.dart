@@ -13,9 +13,9 @@ class CameraPickerPageRoute<T> extends PageRoute<T> {
     this.maintainState = true,
     this.opaque = true,
     this.canTransitionFromPredicate,
-    bool fullscreenDialog = false,
-    RouteSettings? settings,
-  }) : super(settings: settings, fullscreenDialog: fullscreenDialog);
+    super.fullscreenDialog,
+    super.settings,
+  });
 
   final WidgetBuilder builder;
 

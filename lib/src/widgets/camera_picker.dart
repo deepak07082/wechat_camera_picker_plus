@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'dart:async';
 
 import 'package:camera/camera.dart';
@@ -6,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../constants/config.dart';
-import '../constants/constants.dart';
+import '../internals/singleton.dart';
 import '../states/camera_picker_state.dart';
 
 import 'camera_picker_page_route.dart';
@@ -18,11 +17,11 @@ import 'camera_picker_page_route.dart';
 /// 该选择器可以通过 [CameraController] 创建 [AssetEntity]。
 class CameraPicker extends StatefulWidget {
   const CameraPicker({
-    Key? key,
+    super.key,
     this.pickerConfig = const CameraPickerConfig(),
     this.createPickerState,
     this.locale,
-  }) : super(key: key);
+  });
 
   /// {@macro wechat_camera_picker.CameraPickerConfig}
   final CameraPickerConfig pickerConfig;
@@ -75,6 +74,8 @@ class CameraPicker extends StatefulWidget {
         selectionColor: themeColor.withAlpha(100),
         selectionHandleColor: themeColor,
       ),
+      // ignore: deprecated_member_use
+      indicatorColor: themeColor,
       appBarTheme: const AppBarTheme(
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarBrightness: Brightness.dark,
@@ -85,71 +86,24 @@ class CameraPicker extends StatefulWidget {
       buttonTheme: ButtonThemeData(buttonColor: themeColor),
       colorScheme: ColorScheme(
         primary: Colors.grey[900]!,
+        primaryContainer: Colors.grey[900],
         secondary: themeColor,
+        secondaryContainer: themeColor,
+        // ignore: deprecated_member_use
+        background: Colors.grey[900]!,
         surface: Colors.grey[900]!,
         brightness: Brightness.dark,
         error: const Color(0xffcf6679),
         onPrimary: Colors.black,
         onSecondary: Colors.black,
         onSurface: Colors.white,
+        // ignore: deprecated_member_use
+        onBackground: Colors.white,
         onError: Colors.black,
       ),
-      checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.resolveWith<Color?>((
-          Set<MaterialState> states,
-        ) {
-          if (states.contains(MaterialState.disabled)) {
-            return null;
-          }
-          if (states.contains(MaterialState.selected)) {
-            return themeColor;
-          }
-          return null;
-        }),
-      ),
-      radioTheme: RadioThemeData(
-        fillColor: MaterialStateProperty.resolveWith<Color?>((
-          Set<MaterialState> states,
-        ) {
-          if (states.contains(MaterialState.disabled)) {
-            return null;
-          }
-          if (states.contains(MaterialState.selected)) {
-            return themeColor;
-          }
-          return null;
-        }),
-      ),
-      switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith<Color?>((
-          Set<MaterialState> states,
-        ) {
-          if (states.contains(MaterialState.disabled)) {
-            return null;
-          }
-          if (states.contains(MaterialState.selected)) {
-            return themeColor;
-          }
-          return null;
-        }),
-        trackColor: MaterialStateProperty.resolveWith<Color?>((
-          Set<MaterialState> states,
-        ) {
-          if (states.contains(MaterialState.disabled)) {
-            return null;
-          }
-          if (states.contains(MaterialState.selected)) {
-            return themeColor;
-          }
-          return null;
-        }),
-      ),
-      tabBarTheme: TabBarThemeData(indicatorColor: themeColor),
     );
   }
 
   @override
-  CameraPickerState createState() =>
-      // ignore: no_logic_in_create_state
-      createPickerState?.call() ?? CameraPickerState();
+  CameraPickerState createState() => CameraPickerState();
 }

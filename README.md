@@ -11,10 +11,8 @@ and `photo_manager` for asset implementation.
 
 ## 📷 Screenshots
 
-
-| ![](https://tva1.sinaimg.cn/large/007S8ZIlgy1ggtt6yrdqej30u01t017w.jpg) | ![](https://tva1.sinaimg.cn/large/007S8ZIlgy1ggtt6yh3x4j30u01t0wuo.jpg) |
-|-------------------------------------------------------------------------|-------------------------------------------------------------------------|
-| ![](https://tva1.sinaimg.cn/large/007S8ZIlgy1ggtt6z1h7xj30u01t01kx.jpg) | ![](https://tva1.sinaimg.cn/large/007S8ZIlgy1ggtt6zarvhj30u01t0x5f.jpg) |
+| ![1](screenshots/README_1.jpg) | ![2](screenshots/README_2.jpg) | ![3](screenshots/README_3.jpg) | ![4](screenshots/README_4.jpg) | ![5](screenshots/README_5.jpg) |
+|--------------------------------|--------------------------------|--------------------------------|--------------------------------|--------------------------------|
 
 
 ## Features ✨

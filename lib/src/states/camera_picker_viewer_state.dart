@@ -2,38 +2,38 @@
 
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:path/path.dart' as path;
 import 'package:video_player/video_player.dart';
+import 'package:wechat_picker_library/wechat_picker_library.dart';
 
-import '../constants/constants.dart';
+import '../constants/config.dart';
+import '../internals/singleton.dart';
 import '../constants/enums.dart';
-import '../constants/styles.dart';
 import '../constants/type_defs.dart';
 import '../internals/methods.dart';
 import '../widgets/camera_picker.dart';
 import '../widgets/camera_picker_viewer.dart';
 
 class CameraPickerViewerState extends State<CameraPickerViewer> {
+  CameraPickerConfig get pickerConfig => widget.pickerConfig;
+
   /// Whether the player is playing.
   /// 播放器是否在播放
-  final ValueNotifier<bool> isPlaying = ValueNotifier<bool>(false);
+  final isPlaying = ValueNotifier<bool>(false);
 
-  late final ThemeData theme =
-      widget.pickerConfig.theme ?? CameraPicker.themeData(wechatThemeColor);
+  late final theme =
+      pickerConfig.theme ?? CameraPicker.themeData(defaultThemeColorWeChat);
 
   /// Construct an [File] instance through [previewXFile].
   /// 通过 [previewXFile] 构建 [File] 实例。
-  late final File previewFile = File(widget.previewXFile.path);
+  late final previewFile = File(widget.previewXFile.path);
 
   /// Controller for the video player.
   /// 视频播放的控制器
-  late final VideoPlayerController videoController = VideoPlayerController.file(
-    previewFile,
-  );
+  late final videoController = VideoPlayerController.file(previewFile);
 
   /// Whether the controller is playing.
   /// 播放控制器是否在播放
@@ -50,7 +50,7 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
   /// Whether the saving process is ongoing.
   bool isSavingEntity = false;
 
-  CameraErrorHandler? get onError => widget.pickerConfig.onError;
+  CameraErrorHandler? get onError => pickerConfig.onError;
 
   @override
   void initState() {
@@ -74,17 +74,16 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
       await videoController.initialize();
       videoController.addListener(videoControllerListener);
       hasLoaded = true;
-      if (widget.pickerConfig.shouldAutoPreviewVideo) {
+      if (pickerConfig.shouldAutoPreviewVideo) {
         videoController.play();
+        videoController.setLooping(true);
       }
     } catch (e, s) {
       hasErrorWhenInitializing = true;
       realDebugPrint('Error when initializing video controller: $e');
-      handleErrorWithHandler(e, onError, s: s);
+      handleErrorWithHandler(e, s, onError);
     } finally {
-      if (mounted) {
-        setState(() {});
-      }
+      safeSetState(() {});
     }
   }
 
@@ -108,15 +107,30 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
         videoController.pause();
       } else {
         if (videoController.value.duration == videoController.value.position) {
-          videoController
-            ..seekTo(Duration.zero)
-            ..play();
-        } else {
-          videoController.play();
+          videoController.seekTo(Duration.zero);
         }
+        videoController
+          ..play()
+          ..setLooping(true);
       }
     } catch (e, s) {
-      handleErrorWithHandler(e, onError, s: s);
+      handleErrorWithHandler(e, s, onError);
+    }
+  }
+
+  /// If [CameraPickerConfig.shouldDeletePreviewFile] is true, the preview file
+  /// will be deleted after unused.
+  ///
+  /// [CameraPickerConfig.onEntitySaving] will reference the file, we don't want
+  /// the file to be deleted in this case too.
+  void deletePreviewFileIfConfigured() {
+    if (pickerConfig.shouldDeletePreviewFile &&
+        pickerConfig.onEntitySaving != null &&
+        previewFile.existsSync()) {
+      previewFile.delete().catchError((e, s) {
+        handleErrorWithHandler(e, s, onError);
+        return previewFile;
+      });
     }
   }
 
@@ -130,59 +144,78 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
     setState(() {
       isSavingEntity = true;
     });
-    final CameraPickerViewType viewType = widget.viewType;
-    if (widget.pickerConfig.onEntitySaving != null) {
+
+    // Handle the explicitly entity saving method.
+    if (pickerConfig.onEntitySaving != null) {
       try {
-        await widget.pickerConfig.onEntitySaving!(
+        await pickerConfig.onEntitySaving!(
           context,
           widget.viewType,
-          File(widget.previewXFile.path),
+          previewFile,
         );
       } catch (e, s) {
-        handleErrorWithHandler(e, widget.pickerConfig.onError, s: s);
-      }
-      isSavingEntity = false;
-      if (mounted) {
-        setState(() {});
+        handleErrorWithHandler(e, s, onError);
+      } finally {
+        safeSetState(() {
+          isSavingEntity = false;
+        });
       }
       return;
     }
+
     AssetEntity? entity;
     try {
-      final PermissionState ps = await PhotoManager.requestPermissionExtend();
+      final ps = await PhotoManager.requestPermissionExtend(
+        requestOption:
+            pickerConfig.permissionRequestOption ??
+            PermissionRequestOption(
+              iosAccessLevel: IosAccessLevel.addOnly,
+              androidPermission: AndroidPermission(
+                type: switch ((
+                  pickerConfig.enableRecording,
+                  pickerConfig.enableTapRecording,
+                )) {
+                  (true, false) => RequestType.common,
+                  (true, true) => RequestType.video,
+                  (false, _) => RequestType.image,
+                },
+                mediaLocation: false,
+              ),
+            ),
+      );
       if (ps == PermissionState.authorized || ps == PermissionState.limited) {
-        switch (viewType) {
+        final filePath = previewFile.path;
+        switch (widget.viewType) {
           case CameraPickerViewType.image:
-            final String filePath = previewFile.path;
             entity = await PhotoManager.editor.saveImageWithPath(
               filePath,
-              title: path.basename(previewFile.path),
+              title: path.basename(filePath),
             );
             break;
           case CameraPickerViewType.video:
             entity = await PhotoManager.editor.saveVideo(
               previewFile,
-              title: path.basename(previewFile.path),
+              title: path.basename(filePath),
             );
             break;
         }
-        if (widget.pickerConfig.shouldDeletePreviewFile &&
-            previewFile.existsSync()) {
-          previewFile.delete();
-        }
+        deletePreviewFileIfConfigured();
         return;
       }
       handleErrorWithHandler(
         StateError(
           'Permission is not fully granted to save the captured file.',
         ),
-        widget.pickerConfig.onError,
+        StackTrace.current,
+        onError,
       );
     } catch (e, s) {
       realDebugPrint('Saving entity failed: $e');
-      handleErrorWithHandler(e, widget.pickerConfig.onError, s: s);
+      handleErrorWithHandler(e, s, onError);
     } finally {
-      isSavingEntity = false;
+      safeSetState(() {
+        isSavingEntity = false;
+      });
       if (mounted) {
         Navigator.of(context).pop(entity);
       }
@@ -194,33 +227,24 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
   Widget buildBackButton(BuildContext context) {
     return Semantics(
       sortKey: const OrdinalSortKey(0),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: IconButton(
-          onPressed: () {
-            if (isSavingEntity) {
-              return;
-            }
-            if (previewFile.existsSync()) {
-              previewFile.delete();
-            }
-            Navigator.of(context).pop();
-          },
-          padding: EdgeInsets.zero,
-          constraints: BoxConstraints.tight(const Size.square(28)),
-          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-          iconSize: 18,
-          icon: Container(
-            padding: const EdgeInsets.all(5),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.keyboard_return_rounded,
-              color: Colors.black,
-            ),
+      child: IconButton(
+        onPressed: () {
+          if (isSavingEntity) {
+            return;
+          }
+          Navigator.of(context).pop();
+        },
+        padding: EdgeInsets.zero,
+        constraints: BoxConstraints.tight(const Size.square(28)),
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+        iconSize: 18,
+        icon: Container(
+          padding: const EdgeInsets.all(5),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
           ),
+          child: const Icon(Icons.keyboard_return_rounded, color: Colors.black),
         ),
       ),
     );
@@ -245,9 +269,9 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
     }
     return MergeSemantics(
       child: Semantics(
-        label: Constants.textDelegate.sActionPreviewHint,
+        label: Singleton.textDelegate.sActionPreviewHint,
         image: true,
-        onTapHint: Constants.textDelegate.sActionPreviewHint,
+        onTapHint: Singleton.textDelegate.sActionPreviewHint,
         sortKey: const OrdinalSortKey(1),
         child: builder,
       ),
@@ -261,14 +285,14 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
       minWidth: 20,
       height: 32,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      color: theme.colorScheme.secondary,
+      color: Theme.of(context).colorScheme.secondary,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
       onPressed: createAssetEntityAndPop,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       child: Text(
-        Constants.textDelegate.confirm,
+        Singleton.textDelegate.confirm,
         style: TextStyle(
-          color: theme.textTheme.bodyMedium?.color,
+          color: Theme.of(context).textTheme.bodyLarge?.color,
           fontSize: 17,
           fontWeight: FontWeight.normal,
         ),
@@ -313,7 +337,11 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
   Widget buildForeground(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
+        padding: const EdgeInsetsDirectional.only(
+          start: 12.0,
+          end: 12.0,
+          bottom: 12.0,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
@@ -342,7 +370,7 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
       child: AnimatedOpacity(
         duration: kThemeAnimationDuration,
         opacity: isSavingEntity ? 1 : 0,
-        child: _WechatLoading(tip: Constants.textDelegate.saving),
+        child: LoadingIndicator(tip: Singleton.textDelegate.saving),
       ),
     );
   }
@@ -352,7 +380,7 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
     if (hasErrorWhenInitializing) {
       return Center(
         child: Text(
-          Constants.textDelegate.loadFailed,
+          Singleton.textDelegate.loadFailed,
           style: const TextStyle(inherit: false),
         ),
       );
@@ -360,118 +388,30 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
     if (!hasLoaded) {
       return const SizedBox.shrink();
     }
-    return Material(
-      color: Colors.black,
-      child: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          buildPreview(context),
-          buildForeground(context),
-          buildLoading(context),
-        ],
-      ),
-    );
-  }
-}
-
-class _WechatLoading extends StatefulWidget {
-  const _WechatLoading({Key? key, required this.tip}) : super(key: key);
-
-  final String tip;
-
-  @override
-  State<_WechatLoading> createState() => _WechatLoadingState();
-}
-
-class _WechatLoadingState extends State<_WechatLoading>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    duration: const Duration(seconds: 2),
-    vsync: this,
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Widget _buildContent(BuildContext context, double minWidth) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        SizedBox.fromSize(
-          size: Size.square(minWidth / 3),
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (_, Widget? child) => Transform.rotate(
-              angle: math.pi * 2 * _controller.value,
-              child: child,
-            ),
-            child: CustomPaint(
-              painter: _LoadingPainter(
-                Theme.of(context).textTheme.bodyMedium?.color,
-              ),
+    return PopScope(
+      canPop: true,
+      // ignore: deprecated_member_use
+      onPopInvoked: (didPop) {
+        if (didPop) {
+          deletePreviewFileIfConfigured();
+        }
+      },
+      child: Theme(
+        data: theme,
+        child: Builder(
+          builder: (context) => Material(
+            color: Colors.black,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                buildPreview(context),
+                buildForeground(context),
+                if (isSavingEntity) buildLoading(context),
+              ],
             ),
           ),
-        ),
-        SizedBox(height: minWidth / 10),
-        Text(widget.tip, style: const TextStyle(fontSize: 14)),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final double minWidth = MediaQuery.of(context).size.shortestSide / 3;
-    return Container(
-      color: Colors.black38,
-      alignment: Alignment.center,
-      child: RepaintBoundary(
-        child: Container(
-          constraints: BoxConstraints(minWidth: minWidth),
-          padding: EdgeInsets.all(minWidth / 5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: Theme.of(context).canvasColor,
-          ),
-          child: _buildContent(context, minWidth),
         ),
       ),
     );
   }
-}
-
-class _LoadingPainter extends CustomPainter {
-  const _LoadingPainter(this.activeColor);
-
-  final Color? activeColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Color color = activeColor ?? Colors.white;
-    final Offset center = Offset(size.width / 2, size.height / 2);
-    final Rect rect = Rect.fromCenter(
-      center: center,
-      width: size.width,
-      height: size.height,
-    );
-    final Paint paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 4
-      ..shader = SweepGradient(
-        colors: <Color>[color.withValues(alpha: 0), color],
-      ).createShader(rect);
-    canvas.drawArc(rect, 0.1, math.pi * 2 * 0.9, false, paint);
-  }
-
-  @override
-  bool shouldRepaint(_LoadingPainter oldDelegate) => false;
 }

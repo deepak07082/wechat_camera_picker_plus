@@ -17,8 +17,9 @@ class HomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<HomePage> {
   final ValueNotifier<bool> isDisplayingDetail = ValueNotifier<bool>(true);
-  final ValueNotifier<AssetEntity?> selectedAsset =
-      ValueNotifier<AssetEntity?>(null);
+  final ValueNotifier<AssetEntity?> selectedAsset = ValueNotifier<AssetEntity?>(
+    null,
+  );
 
   Future<void> selectAssets(PickMethod model) async {
     final AssetEntity? result = await model.method(context);

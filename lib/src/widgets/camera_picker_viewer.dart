@@ -4,18 +4,19 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/config.dart';
-import '../constants/constants.dart';
+import '../internals/singleton.dart';
 import '../constants/enums.dart';
 import '../states/camera_picker_viewer_state.dart';
 
 class CameraPickerViewer extends StatefulWidget {
   const CameraPickerViewer._({
-    Key? key,
+    // ignore: unused_element
+    super.key,
     required this.viewType,
     required this.previewXFile,
     required this.pickerConfig,
     this.createViewerState,
-  }) : super(key: key);
+  });
 
   /// The type of the viewer. (Image | Video)
   /// 预览的类型（图片或视频）
@@ -36,6 +37,7 @@ class CameraPickerViewer extends StatefulWidget {
   /// 跳转至选择预览的静态方法
   static Future<AssetEntity?> pushToViewer(
     BuildContext context, {
+    Key? key,
     required CameraPickerConfig pickerConfig,
     required CameraPickerViewType viewType,
     required XFile previewXFile,
@@ -48,6 +50,7 @@ class CameraPickerViewer extends StatefulWidget {
     ).push<AssetEntity?>(
       PageRouteBuilder<AssetEntity?>(
         pageBuilder: (_, __, ___) => CameraPickerViewer._(
+          key: key,
           viewType: viewType,
           previewXFile: previewXFile,
           pickerConfig: pickerConfig,
