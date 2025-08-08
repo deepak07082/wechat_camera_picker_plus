@@ -2,8 +2,8 @@ name: wechat_camera_picker_plus
 description: |
   A camera picker for Flutter projects based on WeChat's UI,
   which is also a separate runnable extension to the
-  wechat_assets_picker.
-version: 1.0.2
+  wechat_assets_picker_plus.
+version: 1.0.3
 homepage: https://github.com/deepak07082/wechat_camera_picker_plus.git
 repository: https://github.com/deepak07082/wechat_camera_picker_plus.git
 issue_tracker: https://github.com/deepak07082/wechat_camera_picker_plus/issues

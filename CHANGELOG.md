@@ -4,3 +4,6 @@
 
 ## 1.0.2
   * minor bug fixes
+
+## 1.0.3
+  * File mimeType Video/* issue fix
