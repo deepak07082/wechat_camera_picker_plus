@@ -189,13 +189,13 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
           case CameraPickerViewType.image:
             entity = await PhotoManager.editor.saveImageWithPath(
               filePath,
-              title: path.basename(filePath),
+              title: path.basename(filePath).replaceAll('.temp', '.jpg'),
             );
             break;
           case CameraPickerViewType.video:
             entity = await PhotoManager.editor.saveVideo(
               previewFile,
-              title: path.basename(filePath),
+              title: path.basename(filePath).replaceAll('.temp', '.mp4'),
             );
             break;
         }
