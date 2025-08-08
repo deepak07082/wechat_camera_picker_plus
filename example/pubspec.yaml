@@ -1,0 +1,24 @@
+name: wechat_camera_picker_demo
+description: A new Flutter project.
+version: 3.7.0+22
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  wechat_camera_picker_plus:
+    path: ../
+
+  package_info_plus: ^8.3.0
+  video_player: ^2.10.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
