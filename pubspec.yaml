@@ -25,6 +25,7 @@ dependencies:
 
   wechat_picker_library: ^1.0.5
   camera: 
+  camera_platform_interface:
   collection: ^1.19.1
   meta: ^1.16.0
   path: ^1.9.1
