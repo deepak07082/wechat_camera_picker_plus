@@ -3,7 +3,7 @@ description: |
   A camera picker for Flutter projects based on WeChat's UI,
   which is also a separate runnable extension to the
   wechat_assets_picker_plus.
-version: 1.0.4
+version: 1.0.5
 homepage: https://github.com/deepak07082/wechat_camera_picker_plus.git
 repository: https://github.com/deepak07082/wechat_camera_picker_plus.git
 issue_tracker: https://github.com/deepak07082/wechat_camera_picker_plus/issues
@@ -16,8 +16,8 @@ topics:
   - wechat
 
 environment:
-  sdk: ^3.8.0
-  flutter: ">=1.17.0"
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
 
 dependencies:
   flutter:
@@ -27,13 +27,13 @@ dependencies:
   camera:
   camera_platform_interface:
   collection: ^1.19.1
-  meta: ^1.18.0
+  meta: ^1.19.0
   path: ^1.9.1
-  photo_manager: ^3.10.0
+  photo_manager: ^3.12.0
   photo_manager_image_provider: ^2.2.0
   uuid: ^4.6.0
   video_player:
-  sensors_plus: ^7.1.0
+  sensors_plus: ^7.1.1
 
 dev_dependencies:
   flutter_test:

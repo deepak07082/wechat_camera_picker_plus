@@ -1,3 +1,7 @@
+## 1.0.5
+
+- packages updated
+
 ## 1.0.4
 
 - Swift package manager support added

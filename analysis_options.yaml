@@ -28,3 +28,4 @@ analyzer:
     - '**/*.g.dart'
     - '**/*.gr.dart'
     - '**/*.freezed.dart'
+    - build/**
